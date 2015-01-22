@@ -1,0 +1,342 @@
+---
+title: "MachineLearningProject"
+author: "KS"
+date: "Friday, January 23, 2015"
+output: html_document
+---
+
+```{r echo=FALSE, results="hide"}
+##Putting all code here at the start so I can call it in my report further down
+## commenting out all models(train function) because they take to long to run (all comented out plots and library(caret)) 
+
+## read in the data sets 
+pml_train<-read.csv("pml-training.csv")
+pml_test<-read.csv("pml-testing.csv")
+
+## get all the columns that have ZERO NAs from the test dataset 
+a<-which(colSums(is.na(pml_test))==0) 
+
+
+################################
+#GEt values from an atomic vector
+#################################
+
+getValuesFromAnAtomicVector <- function(list) {
+
+  ll<-c()
+  
+  for(i in 1:length(list)){    
+    #print(i)  
+    tmp<-getElement(a,i)
+    ll<-append(ll,tmp)
+  }
+  
+  ll
+  
+}
+
+
+columnsWithNoNAs<-getValuesFromAnAtomicVector(a) # this is all the columns that have ZERO NAs
+
+pml_train_NoNAs<-pml_train[,columnsWithNoNAs] ## create a new train dataset with just the columns that have ZERO NAs from the test dataset
+
+
+################################
+# Find Factors in DF
+#################################
+
+FindFactorsInDF <- function(df = data.frame()) {
+  
+  ndf<-names(df)
+  index<-c()
+  
+  for(i in 1:length(ndf)){
+    col.name <- ndf[i]
+    #print(col.name)
+    #print(class(df[,1]))
+    if (class(df[,i])=="factor"){
+      index<-append(index,i)
+    }
+  }
+  index #return index of variables that are factors  
+}
+
+
+FindFactorsInDF(pml_train_NoNAs) ## Find Factors in DF 
+
+#these are:
+#user_name 
+#cvtd_timestamp
+#new_window
+#classe ## but don't want to delete this 
+
+FindFactorsInDF(pml_train_NoNAs) ## Find Factors in DF 
+#[1]  2  5  6 60 
+pml_train_NoNAs[,2]<-NULL ## remove columns that are factors
+FindFactorsInDF(pml_train_NoNAs) ## Find Factors in DF 
+#[1]  4  5 59
+pml_train_NoNAs[,4]<-NULL ## remove columns that are vectors
+FindFactorsInDF(pml_train_NoNAs) ## Find Factors in DF 
+#[1]  4 58
+pml_train_NoNAs[,4]<-NULL ## remove columns that are vectors
+FindFactorsInDF(pml_train_NoNAs) ## Find Factors in DF
+#[1] 57
+
+
+#library(caret) ## need this for train function 
+
+#mf1<-train(classe ~.,data=pml_train_NoNAs, method="lda") ## build my model
+
+#mf1  # show my model this is 99% whcih suggests overfitting 
+
+################################
+# Predict Model for project giving it model and testdata fro prediction
+#################################
+
+predicMLProject<- function(df = data.frame(),mf) {  ##mf will be model fit to use for prediction
+  
+  nr<- nrow(df) # get number of rows # it will be 1 row per test/prediction
+  pl<-c() # prediction_list containg all the predictions per row 
+  for(i in 1:nr){
+    #print(i)
+    nn<-predict(mf,df[i,])
+    nn<-as.character(nn)
+    pl<-append(pl,nn)
+  }
+  
+  pl
+}
+
+
+#predicMLProject(pml_test,mf1)
+#[1] "A" "A" "A" "A" "A" "A" "A" "A" "A" "A" "A" "A" "A" "A" "A" "A" "A" "A" "A" "A"
+
+#mf1
+#Linear Discriminant Analysis 
+
+#19622 samples
+#56 predictor
+#5 classes: 'A', 'B', 'C', 'D', 'E' 
+
+#No pre-processing
+#Resampling: Bootstrapped (25 reps) 
+
+#Summary of sample sizes: 19622, 19622, 19622, 19622, 19622, 19622, ... 
+
+#Resampling results
+
+#Accuracy   Kappa      Accuracy SD   Kappa SD    
+#0.9999335  0.9999158  8.121178e-05  0.0001027739
+
+
+#plot(pml_train_NoNAs[,1], ylab=names(pml_train_NoNAs)[1]) ## a plot of variable X this could be removed because of its pattern 
+
+#a qplot of the variable X in relation to classe
+#qplot(classe,pml_train_NoNAs[,1],color=classe,data=pml_train_NoNAs,xlab="classe",ylab=names(pml_train_NoNAs[1]))
+
+#then I decided to remove a further 3 columns 
+#X
+#raw_timestamp_part_1
+#raw_timestamp_part_2
+
+
+pml_train_NoNAs_mf2<-pml_train_NoNAs
+dim(pml_train_NoNAs_mf2)
+#[1] 19622    57
+
+dim(pml_train_NoNAs_mf2)
+#[1] 19622    57 
+pml_train_NoNAs_mf2[,1]<-NULL
+dim(pml_train_NoNAs_mf2)
+#[1] 19622    56
+pml_train_NoNAs_mf2[,1]<-NULL
+dim(pml_train_NoNAs_mf2)
+#[1] 19622    55
+pml_train_NoNAs_mf2[,1]<-NULL
+dim(pml_train_NoNAs_mf2)
+#[1] 19622    54
+
+# create my second model
+#mf2<-train(classe ~.,data=pml_train_NoNAs_mf2, method="lda")
+
+#mf2
+#Linear Discriminant Analysis 
+
+#19622 samples
+#53 predictor
+#5 classes: 'A', 'B', 'C', 'D', 'E' 
+
+#No pre-processing
+#Resampling: Bootstrapped (25 reps) 
+
+#Summary of sample sizes: 19622, 19622, 19622, 19622, 19622, 19622, ... 
+
+#Resampling results
+
+#Accuracy   Kappa      Accuracy SD  Kappa SD  
+#0.7140877  0.6381531  0.00532862   0.00652724
+
+
+
+ 
+#predicMLProject(pml_test,mf2)
+#[1] "B" "A" "B" "A" "A" "E" "D" "D" "A" "A" "D" "A" "E" "A" "B" "A" "A" "B" "B" "B"
+
+#this takes a while
+#mf3<-train(classe ~.,data=pml_train_NoNAs_mf2, method="rf")
+#Loading required package: randomForest
+#randomForest 4.6-10
+#Type rfNews() to see new features/changes/bug fixes.
+#mf3
+#Random Forest 
+
+#19622 samples
+#53 predictor
+#5 classes: 'A', 'B', 'C', 'D', 'E' 
+
+#No pre-processing
+#Resampling: Bootstrapped (25 reps) 
+
+#Summary of sample sizes: 19622, 19622, 19622, 19622, 19622, 19622, ... 
+
+#Resampling results across tuning parameters:
+  
+#  mtry  Accuracy   Kappa      Accuracy SD   Kappa SD   
+#2    0.9950220  0.9937043  0.0013603270  0.001720807
+#27    0.9977092  0.9971029  0.0006661504  0.000843213
+#53    0.9947202  0.9933219  0.0021087307  0.002671587
+
+#Accuracy was used to select the optimal model using  the largest value.
+#The final value used for the model was mtry = 27. 
+
+
+#predicMLProject(pml_test,mf3)
+#[1] "B" "A" "B" "A" "A" "E" "D" "B" "A" "A" "B" "C" "B" "A" "E" "E" "A" "B" "B" "B"  # mf3 answers
+#ans<-predicMLProject(pml_test,mf3)
+
+##ans[c(3,8,11,12,15,16)]
+#[1] "B" "B" "B" "C" "E" "E"
+#ans_orig_4wrong[c(3,8,11,12,15,16)]
+#[1] "B" "D" "D" "A" "B" "A" ## answers I got wrong last time; there was 6 in total; notice that no.3 is still the same  
+
+
+
+```
+
+####Introduction 
+
+This is a project for the Machine learning course in Data Science offered on coursera.org by John Hopkins Bloomberg School of Public Health. The goal of this project is to predict the manner in which they did the exercise. This is the \"classe\" variable in the training set. We will use any of the other variables to predict with. here I describe how I built my model, how I used cross validation, what I think the expected out of sample error is, and why I made the choices I did. I will also use my prediction model to predict 20 different test cases. 
+
+#### Exploratory Analysis & Tidying Data
+There are 2 datasets here to start with **[pml_train(pml-testing.csv)](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv)** and **[pml_test(pml-training.csv)](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv)**. Both have 160 variables alot of which is NAs and due to the lack of a codebook I am unable to determine what these variables are. The variable names do give an idea of what they might be. One main difference between the training and testing dataset is the variable **classe** is in training and it is called **problem_id** in the testing dataset. It is our objective here to predict the value (A,B,C,D,E) of the testing dataset, by building a predictive model using the training dataset. 
+
+After numerous attempts of tidying the data, I finally decided to find all the columns in the test data that do not have any NAs and then use that to get them columns from my train dataset. this is the data set I used and I build my model based on this: 
+
+**NOTE: Anything with the variables mf1,mf2 and ,mf3 will be commented out as they have not been declared as this report takes too long to run. Please see the Functions.R file for all the code used here.**
+
+```{r}
+dim(pml_train_NoNAs) # this is the train dataset with columns that do not have any NAs in the columns from the test dataset
+#mf1<-train(classe ~.,data=pml_train_NoNAs, method="lda") # comented out here as takes a while to run
+```
+
+My first model above, **mf1**, gave me an accuracy of 99% which sounded to good to be true, which proved so as I done my prediction with this model on the test set and got all "A"s which suggested to me that I might be overfitting. 
+
+```{r}
+#predicMLProject(pml_test,mf1)  # comented out here as takes a while to run
+#[1] "A" "A" "A" "A" "A" "A" "A" "A" "A" "A" "A" "A" "A" "A" "A" "A" "A" "A" "A" "A"  ## all "A"s answer from model mf1 
+```
+
+### Fine Tuning the model
+Given the above model was possibly overfitting here I plan to do some fine tuning. Having a further looked at the data I notieced the X variable to have an interesting pattern and felt it should be removed for my model:
+
+```{r,echo=FALSE}
+plot(pml_train_NoNAs[,1], ylab=names(pml_train_NoNAs)[1])
+```
+
+**Figure1:** This is a look at the **X** variable in the dataset. 
+
+```{r,echo=FALSE}
+library(ggplot2)
+qplot(classe,pml_train_NoNAs[,1],color=classe,data=pml_train_NoNAs,xlab="classe",ylab=names(pml_train_NoNAs[1]))
+```
+
+**Figure2:** This is a look at the **X** variable in the dataset cloloured by the **classe**  variable.
+
+So I then decided to remove 3 columns and build a new model:
+**X** as explained above and these two, **raw_timestamp_part_1** and **raw_timestamp_part_2** as this would not help the prediction model.
+
+```{r}
+dim(pml_train_NoNAs_mf2)
+#`mf2<-train(classe ~.,data=pml_train_NoNAs_mf2, method="lda")`# comented out here as takes a while to run
+```
+
+This was a better model, in that it gave me varied predictions of A, B, C, D or E. But it still only gave me an accuracy of 71%.This was reflected in the second part of the project where my prediction model was to predict the 20 different test cases. Here I only got 14 out of 20 right (14/20=0.7). 
+
+```{r}
+#predicMLProject(pml_test,mf2) # comented out here as contains the variable mf2 which is not declared 
+#[1] "B" "A" "B" "A" "A" "E" "D" "D" "A" "A" "D" "A" "E" "A" "B" "A" "A" "B" "B" "B"`
+```
+
+Now here I would like to explain how I improve the accuracy of my model, by various methods, if time pemits.  
+
+- Finding and removing non varying variables as these do not add to the model.
+- use other models other than **lda**
+- Do some crossvalidation
+- Do some preProcessing
+
+Firstly I will try another model, unsing **randomForest**, as opposed to **lda**. 
+
+```{r}
+#mf3<-train(classe ~.,data=pml_train_NoNAs_mf2, method="rf") # comented out here as takes a while to run
+#predicMLProject(pml_test,mf3) comented out here as contains the variable mf3 which is not declared 
+#[1] "B" "A" "B" "A" "A" "E" "D" "B" "A" "A" "B" "C" "B" "A" "E" "E" "A" "B" "B" "B"  # mf3 answers
+```
+
+This gives an Accuracy of 99% and on submitting these in my 20 test cases I get 19 out of 20 right, which is very close to 100%. 
+
+Unfortunately, I did not get time to further improve my accuracy. This is something I would like to revisit.
+
+
+```{r, echo=FALSE,results="hide"}
+
+# THESE ARE JUST MY PERSONNEL NOTES FOR THIS PROJECT
+
+#Introduction 
+
+"The goal of your project is to predict the manner in which they did the exercise. This is the \"classe\" variable in the training set. You may use any of the other variables to predict with. You should create a report describing how you built your model, how you used cross validation, what you think the expected out of sample error is, and why you made the choices you did. You will also use your prediction model to predict 20 different test cases. 
+
+1. Your submission should consist of a link to a Github repo with your R markdown and compiled HTML file describing your analysis. 
+Please constrain the text of the **writeup to < 2000 words** and the number of **figures to be less than 5**. 
+It will make it easier for the graders if you submit a repo with a gh-pages branch so the HTML page can be viewed online (and you always want to make it easy on graders :-).
+
+2. You should also apply your machine learning algorithm to the 20 test cases available in the test data above. Please submit your predictions in appropriate format to the programming assignment for automated grading. 
+See the programming assignment for additional details. 
+
+##Background
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset). 
+
+
+# KS NOTES
+
+* predict the manner in which they did the exercise.
+* This is the \"classe\" variable in the training set.
+* You should create a report describing how you built your model 
+* You should create a report describing 
+    * how you built your model
+    * how you used cross validation
+    * what you think the expected out of sample error is
+    * and why you made the choices you did
+* You will also use your prediction model to predict 20 different test cases.
+
+* writeup to < 2000 words
+* figures to be less than 5"
+
+```
+
+###Reference
+Please see here for more details on the WLE dataset
+
+Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. [Qualitative Activity Recognition of Weight Lifting Exercises](http://groupware.les.inf.puc-rio.br/work.jsf?p1=11201). Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human '13) . Stuttgart, Germany: ACM SIGCHI, 2013.
+
+Read more: http://groupware.les.inf.puc-rio.br/har#ixzz3O5zG5ZD3
